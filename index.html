@@ -119,23 +119,19 @@
             align-items: center;
             box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
             z-index: 100;
+            cursor: pointer;
         }
 
         .current-day {
             font-size: 18px;
             font-weight: 600;
             color: #333;
-            cursor: pointer;
             padding: 8px 12px;
             border-radius: 8px;
-            transition: background 0.2s;
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-
-        .current-day:active {
-            background: rgba(0, 0, 0, 0.05);
+            pointer-events: none;
         }
 
         .current-day::after {
@@ -151,6 +147,7 @@
             transition: opacity 0.2s;
             user-select: none;
             padding: 8px;
+            pointer-events: auto;
         }
 
         .settings-icon:active {
@@ -448,11 +445,11 @@
     </div>
 
     <!-- Bottom Navigation -->
-    <div class="bottom-nav">
-        <div class="current-day" onclick="showDayPicker()">
+    <div class="bottom-nav" onclick="showDayPicker()">
+        <div class="current-day">
             <span id="currentDayText">Monday</span>
         </div>
-        <div class="settings-icon" onclick="showSettings()">⚙️</div>
+        <div class="settings-icon" onclick="event.stopPropagation(); showSettings()">⚙️</div>
     </div>
 
     <!-- Day Picker Modal -->
@@ -645,6 +642,54 @@
             }
             
             document.getElementById('detailView').classList.add('active');
+            
+            // Setup swipe to go back
+            setupSwipeGesture();
+        }
+
+        // Swipe gesture variables
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+
+        // Setup swipe gesture for detail view
+        function setupSwipeGesture() {
+            const detailView = document.getElementById('detailView');
+            
+            // Remove old listeners if they exist
+            detailView.removeEventListener('touchstart', handleTouchStart);
+            detailView.removeEventListener('touchmove', handleTouchMove);
+            detailView.removeEventListener('touchend', handleTouchEnd);
+            
+            // Add new listeners
+            detailView.addEventListener('touchstart', handleTouchStart, { passive: true });
+            detailView.addEventListener('touchmove', handleTouchMove, { passive: true });
+            detailView.addEventListener('touchend', handleTouchEnd, { passive: true });
+        }
+
+        function handleTouchStart(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }
+
+        function handleTouchMove(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+        }
+
+        function handleTouchEnd(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            
+            const swipeDistanceX = touchEndX - touchStartX;
+            const swipeDistanceY = Math.abs(touchEndY - touchStartY);
+            const minSwipeDistance = 80;
+            
+            // Swipe right (left to right) and mostly horizontal
+            if (swipeDistanceX > minSwipeDistance && swipeDistanceY < 100) {
+                closeDetail();
+            }
         }
 
         // Close detail view
